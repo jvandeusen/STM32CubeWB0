@@ -29,12 +29,14 @@
 #include "stm32wb0x.h"
 #include "stm32wb0x_ll_usart.h"
 #include "ble_stack.h"
+#include "dt_serv_app.h"
 #if (CFG_LPM_SUPPORTED == 1)
 #include "stm32_lpm.h"
 #endif /* CFG_LPM_SUPPORTED */
 #include "app_debug.h"
 
 /* Private includes -----------------------------------------------------------*/
+#include <stdio.h>
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
@@ -61,6 +63,7 @@ typedef struct
 #endif
 /* Section specific to button management using UART */
 #define C_SIZE_CMD_STRING       256U
+#define UART_HEARTBEAT_PERIOD_MS 1000U
 
 /* USER CODE END PD */
 
@@ -79,6 +82,8 @@ static ButtonDesc_t buttonDesc[BUTTON_NB_MAX];
 /* Section specific to button management using UART */
 static uint8_t CommandString[C_SIZE_CMD_STRING];
 static uint16_t indexReceiveChar = 0;
+static VTIMER_HandleType uartHeartbeatTimer;
+static uint32_t uartHeartbeatTick;
 
 /* USER CODE END PV */
 
@@ -101,6 +106,10 @@ static void Button_TriggerActions(void *arg);
 /* Section specific to button management using UART */
 static void RxUART_Init(void);
 static void UartCmdExecute(void);
+static void UART_HeartbeatTimerCallback(void *arg);
+static void UART_HeartbeatTask(void);
+static void UART_RxProcessTask(void);
+static void UART_RxReadyCallback(void);
 /* USER CODE END PFP */
 
 /* External variables --------------------------------------------------------*/
@@ -158,6 +167,16 @@ uint32_t MX_APPE_Init(void *p_param)
   HW_AES_Init();
   HW_PKA_Init();
   APP_BLE_Init();
+
+  UTIL_SEQ_RegTask(1U << TASK_UART_HEARTBEAT, UTIL_SEQ_RFU, UART_HeartbeatTask);
+  UTIL_SEQ_RegTask(1U << TASK_UART_RX_PROCESS, UTIL_SEQ_RFU, UART_RxProcessTask);
+
+  UART_RegisterRxCallback(UART_RxReadyCallback);
+
+  uartHeartbeatTimer.callback = UART_HeartbeatTimerCallback;
+  uartHeartbeatTimer.userData = NULL;
+  uartHeartbeatTick = 0U;
+  HAL_RADIO_TIMER_StartVirtualTimer(&uartHeartbeatTimer, UART_HEARTBEAT_PERIOD_MS);
 
 #if (CFG_LPM_SUPPORTED == 1)
   /* Low Power Manager Init */
@@ -412,6 +431,37 @@ static void UartCmdExecute(void)
   {
     APP_DBG_MSG("NOT RECOGNIZED COMMAND : %s\n", CommandString);
   }
+}
+
+static void UART_HeartbeatTimerCallback(void *arg)
+{
+  UNUSED(arg);
+  UTIL_SEQ_SetTask(1U << TASK_UART_HEARTBEAT, CFG_SEQ_PRIO_0);
+}
+
+static void UART_HeartbeatTask(void)
+{
+  uint8_t hb_msg[24];
+  int hb_len;
+
+  uartHeartbeatTick++;
+  hb_len = snprintf((char *)hb_msg, sizeof(hb_msg), "HB:%lu\n", (unsigned long)uartHeartbeatTick);
+  if (hb_len > 0)
+  {
+    (void)UART_TX_Notify(hb_msg, (uint16_t)hb_len);
+  }
+
+  HAL_RADIO_TIMER_StartVirtualTimer(&uartHeartbeatTimer, UART_HEARTBEAT_PERIOD_MS);
+}
+
+static void UART_RxProcessTask(void)
+{
+  UART_ProcessPendingRx();
+}
+
+static void UART_RxReadyCallback(void)
+{
+  UTIL_SEQ_SetTask(1U << TASK_UART_RX_PROCESS, CFG_SEQ_PRIO_0);
 }
 
 /* USER CODE END FD_LOCAL_FUNCTIONS */

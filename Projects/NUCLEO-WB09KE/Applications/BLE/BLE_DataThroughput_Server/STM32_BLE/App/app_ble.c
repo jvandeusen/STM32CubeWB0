@@ -35,6 +35,7 @@
 #include "stm32_seq.h"
 #include "dt_serv.h"
 #include "dt_serv_app.h"
+#include "uart_service_uuid.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -160,7 +161,7 @@ static BleApplicationContext_t bleAppContext;
 
 DT_SERV_APP_ConnHandleNotEvt_t DT_SERVHandleNotification;
 
-static const char a_GapDeviceName[] = {  'D', 'a', 't', 'a', ' ', 'T', 'h', 'r', 'o', 'u', 'g', 'h', 'p', 'u', 't', ' ', 'S', 'e', 'r', 'v', 'e', 'r' }; /* Gap Device Name */
+static const char a_GapDeviceName[] = { 'W', 'B', '0', '9', '_', 'U', 'A', 'R', 'T' }; /* Gap Device Name */
 
 /**
  * Advertising Data
@@ -168,8 +169,8 @@ static const char a_GapDeviceName[] = {  'D', 'a', 't', 'a', ' ', 'T', 'h', 'r',
 uint8_t a_AdvData[] =
 {
   2, AD_TYPE_FLAGS, FLAG_BIT_LE_GENERAL_DISCOVERABLE_MODE|FLAG_BIT_BR_EDR_NOT_SUPPORTED,
-  6, AD_TYPE_COMPLETE_LOCAL_NAME, 'D', 'T', '_', 'X', 'X',  /* Complete name */
-  15, AD_TYPE_MANUFACTURER_SPECIFIC_DATA, 0x30, 0x00, 0x00 /*  */, 0x00 /*  */, 0x00 /*  */, 0x00 /*  */, 0x00 /*  */, 0x00 /*  */, 0x00 /*  */, 0x00 /*  */, 0x00 /*  */, 0x00 /*  */, 0x00 /*  */, 0x00 /*  */,
+  9, AD_TYPE_COMPLETE_LOCAL_NAME, 'W', 'B', '0', '9', 'U', 'A', 'R', 'T',
+  17, AD_TYPE_128_BIT_SERV_UUID_CMPLT_LIST, UART_SERVICE_UUID_128,
 };
 
 /* USER CODE BEGIN PV */

@@ -28,6 +28,8 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "dt_serv.h"
+#include "ble_status.h"
 #define BUTTON_PRESSED                                            GPIO_PIN_RESET
 /* USER CODE END Includes */
 
@@ -81,6 +83,14 @@ void DTS_Button1TriggerReceived(void);
 void DTS_Button2TriggerReceived(void);
 void DTS_Button3TriggerReceived(void);
 void Resume_Notification(void);
+void UART_RX_WriteHandler(const uint8_t *data, uint16_t len);
+void UART_ProcessPendingRx(void);
+
+void UART_RegisterRxCallback(UART_RX_Callback_t cb);
+uint8_t UART_RX_Pending(void);
+uint16_t UART_RX_Available(void);
+uint16_t UART_RX_Read(uint8_t *out, uint16_t max_len);
+tBleStatus UART_TX_Notify(uint8_t *data, uint16_t len);
 /* USER CODE END EF */
 
 #ifdef __cplusplus

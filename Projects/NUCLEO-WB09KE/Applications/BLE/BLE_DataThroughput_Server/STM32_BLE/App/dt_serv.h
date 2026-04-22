@@ -29,6 +29,7 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "ble_status.h"
 /* USER CODE BEGIN Includes */
+#include "uart_service_uuid.h"
 
 /* USER CODE END Includes */
 
@@ -42,7 +43,6 @@ typedef enum
 {
   DT_SERV_TX_CHAR,
   DT_SERV_RX_CHAR,
-  DT_SERV_THROUGH_CHAR,
 
   /* USER CODE BEGIN Service1_CharOpcode_t */
 
@@ -55,10 +55,7 @@ typedef enum
 {
   DT_SERV_TX_CHAR_NOTIFY_ENABLED_EVT,
   DT_SERV_TX_CHAR_NOTIFY_DISABLED_EVT,
-  DT_SERV_RX_CHAR_READ_EVT,
-  DT_SERV_RX_CHAR_WRITE_NO_RESP_EVT,
-  DT_SERV_THROUGH_CHAR_NOTIFY_ENABLED_EVT,
-  DT_SERV_THROUGH_CHAR_NOTIFY_DISABLED_EVT,
+  DT_SERV_RX_CHAR_WRITE_EVT,
 
   /* USER CODE BEGIN Service1_OpcodeEvt_t */
 
@@ -70,11 +67,10 @@ typedef enum
 typedef struct
 {
   uint8_t *p_Payload;
-  uint8_t Length;
+  uint16_t Length;
 
   /* USER CODE BEGIN Service1_Data_t */
-  uint8_t pPayload_n_1;
-  uint8_t pPayload_n;
+
   /* USER CODE END Service1_Data_t */
 
 } DT_SERV_Data_t;
@@ -94,6 +90,11 @@ typedef struct
 } DT_SERV_NotificationEvt_t;
 
 /* USER CODE BEGIN ET */
+typedef enum
+{
+  DT_SERV_CHAR_HANDLE_TX = DT_SERV_GATT_ID_UART_TX_CHAR,
+  DT_SERV_CHAR_HANDLE_RX = DT_SERV_GATT_ID_UART_RX_CHAR
+} DT_SERV_CharHandleId_t;
 
 /* USER CODE END ET */
 
@@ -118,6 +119,15 @@ void DT_SERV_Notification(DT_SERV_NotificationEvt_t *p_Notification);
 tBleStatus DT_SERV_UpdateValue(DT_SERV_CharOpcode_t CharOpcode, DT_SERV_Data_t *pData);
 tBleStatus DT_SERV_NotifyValue(DT_SERV_CharOpcode_t CharOpcode, DT_SERV_Data_t *pData, uint16_t ConnectionHandle);
 /* USER CODE BEGIN EF */
+#define UART_RX_RING_SIZE (512U)
+
+typedef void (*UART_RX_Callback_t)(void);
+
+void UART_RegisterRxCallback(UART_RX_Callback_t cb);
+uint8_t UART_RX_Pending(void);
+uint16_t UART_RX_Available(void);
+uint16_t UART_RX_Read(uint8_t *out, uint16_t max_len);
+tBleStatus UART_TX_Notify(uint8_t *data, uint16_t len);
 
 /* USER CODE END EF */
 
